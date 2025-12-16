@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.rows import dict_row
 import hashlib
 import secrets
 from datetime import datetime, timedelta
@@ -18,7 +18,7 @@ def get_db():
     uri = os.getenv("DATABASE_URL")
     if not uri:
         raise ValueError("DATABASE_URL is not set")
-    conn = psycopg2.connect(uri, cursor_factory=RealDictCursor)
+    conn = psycopg.connect(uri, row_factory=dict_row)
     return conn
 
 # -------------------------------------------------------------------
