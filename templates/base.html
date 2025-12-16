@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Dashboard - License Management{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔐 Admin Dashboard</h1>
+            <p>License & Product Key Management System</p>
+        </header>
+
+        <nav class="nav-tabs">
+            <a href="/" class="tab {% if request.path == '/' %}active{% endif %}">Dashboard</a>
+            <a href="/requests" class="tab {% if request.path == '/requests' %}active{% endif %}">Requests</a>
+            <a href="/licenses" class="tab {% if request.path == '/licenses' %}active{% endif %}">Licenses</a>
+        </nav>
+
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 CRUD App License Management</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+
