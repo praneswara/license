@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Product Key Requests - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="requests-page">
+    <div class="page-header">
+        <h2>📝 Product Key Requests</h2>
+        <button class="btn-refresh" onclick="location.reload()">🔄 Refresh</button>
+    </div>
+
+    <div class="filters">
+        <a href="/requests?status=pending" class="filter-btn {% if request.args.get('status') == 'pending' %}active{% endif %}">Pending</a>
+        <a href="/requests?status=approved" class="filter-btn {% if request.args.get('status') == 'approved' %}active{% endif %}">Approved</a>
+        <a href="/requests?status=rejected" class="filter-btn {% if request.args.get('status') == 'rejected' %}active{% endif %}">Rejected</a>
+        <a href="/requests" class="filter-btn {% if not request.args.get('status') %}active{% endif %}">All</a>
+    </div>
+
+    <div class="table-container">
+        {% if requests %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Subscription</th>
+                    <th>Status</th>
+                    <th>Product Key</th>
+                    <th>Device ID</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in requests %}
+                <tr>
+                    <td>{{ req.id }}</td>
+                    <td>{{ req.email }}</td>
+                    <td>{{ req.name or '-' }}</td>
+                    <td>
+                        <span class="badge subscription-{{ req.subscription_type }}">
+                            {{ req.subscription_type }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge status-{{ req.status }}">
+                            {{ req.status }}
+                        </span>
+                    </td>
+                    <td class="product-key">
+                        {% if req.product_key %}
+                            <code>{{ req.product_key }}</code>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <code class="device-id">{{ req.device_id[:30] + '...' if req.device_id and req.device_id|length > 30 else (req.device_id or '-') }}</code>
+                    </td>
+                    <td>{{ req.created_at[:19] if req.created_at else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No requests found</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

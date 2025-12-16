@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Product Keys & Licenses - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="licenses-page">
+    <div class="page-header">
+        <h2>🔑 Product Keys & Licenses</h2>
+        <button class="btn-refresh" onclick="location.reload()">🔄 Refresh</button>
+    </div>
+
+    <div class="table-container">
+        {% if licenses %}
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Product Key</th>
+                    <th>User</th>
+                    <th>Subscription</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Status</th>
+                    <th>Device ID</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for license in licenses %}
+                <tr>
+                    <td class="product-key">
+                        <code>{{ license.product_key }}</code>
+                    </td>
+                    <td>
+                        <div>{{ license.user_email or '-' }}</div>
+                        {% if license.user_name %}
+                        <small class="text-muted">{{ license.user_name }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge subscription-{{ license.subscription_type }}">
+                            {{ license.subscription_type }}
+                        </span>
+                    </td>
+                    <td>{{ license.start_date[:10] if license.start_date else '-' }}</td>
+                    <td>
+                        {{ license.end_date[:10] if license.end_date else '-' }}
+                    </td>
+                    <td>
+                        {% if license.is_active %}
+                            <span class="badge status-active">Active</span>
+                        {% else %}
+                            <span class="badge status-inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <code class="device-id">{{ license.device_id[:30] + '...' if license.device_id and license.device_id|length > 30 else (license.device_id or '-') }}</code>
+                    </td>
+                    <td>{{ license.created_at[:10] if license.created_at else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-state">No licenses found</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

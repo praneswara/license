@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <!-- Statistics Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-info">
+                <h3>Total Requests</h3>
+                <p class="stat-value">{{ stats.total_requests }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card pending">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+                <h3>Pending Requests</h3>
+                <p class="stat-value">{{ stats.pending_requests }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card approved">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <h3>Approved Requests</h3>
+                <p class="stat-value">{{ stats.approved_requests }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🔑</div>
+            <div class="stat-info">
+                <h3>Total Product Keys</h3>
+                <p class="stat-value">{{ stats.total_keys }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card active">
+            <div class="stat-icon">🟢</div>
+            <div class="stat-info">
+                <h3>Active Licenses</h3>
+                <p class="stat-value">{{ stats.active_keys }}</p>
+            </div>
+        </div>
+
+        <div class="stat-card expired">
+            <div class="stat-icon">🔴</div>
+            <div class="stat-info">
+                <h3>Expired Licenses</h3>
+                <p class="stat-value">{{ stats.expired_keys }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Requests -->
+    <div class="section">
+        <h2>📝 Recent Product Key Requests</h2>
+        <div class="table-container">
+            {% if recent_requests %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Email</th>
+                        <th>Name</th>
+                        <th>Subscription</th>
+                        <th>Status</th>
+                        <th>Product Key</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in recent_requests %}
+                    <tr>
+                        <td>{{ req.id }}</td>
+                        <td>{{ req.email }}</td>
+                        <td>{{ req.name or '-' }}</td>
+                        <td>
+                            <span class="badge subscription-{{ req.subscription_type }}">
+                                {{ req.subscription_type }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge status-{{ req.status }}">
+                                {{ req.status }}
+                            </span>
+                        </td>
+                        <td class="product-key">
+                            {% if req.product_key %}
+                                <code>{{ req.product_key }}</code>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ req.created_at[:10] if req.created_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty-state">No requests found</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Recent Product Keys -->
+    <div class="section">
+        <h2>🔑 Recent Product Keys</h2>
+        <div class="table-container">
+            {% if recent_keys %}
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Product Key</th>
+                        <th>User</th>
+                        <th>Subscription</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Status</th>
+                        <th>Device ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key in recent_keys %}
+                    <tr>
+                        <td class="product-key">
+                            <code>{{ key.product_key }}</code>
+                        </td>
+                        <td>
+                            <div>{{ key.user_email or '-' }}</div>
+                            {% if key.user_name %}
+                            <small class="text-muted">{{ key.user_name }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge subscription-{{ key.subscription_type }}">
+                                {{ key.subscription_type }}
+                            </span>
+                        </td>
+                        <td>{{ key.start_date[:10] if key.start_date else '-' }}</td>
+                        <td>
+                            {{ key.end_date[:10] if key.end_date else '-' }}
+                        </td>
+                        <td>
+                            {% if key.is_active %}
+                                <span class="badge status-active">Active</span>
+                            {% else %}
+                                <span class="badge status-inactive">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <code class="device-id">{{ key.device_id[:20] + '...' if key.device_id and key.device_id|length > 20 else (key.device_id or '-') }}</code>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="empty-state">No product keys found</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
