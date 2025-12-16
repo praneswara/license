@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import os
 import string
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates', static_folder='static')
 CORS(app)
 
 # -------------------------------------------------------------------
@@ -581,6 +581,149 @@ def get_product_keys():
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+# -------------------------------------------------------------------
+# ADMIN DASHBOARD (Base URL)
+# -------------------------------------------------------------------
+@app.route('/', methods=['GET'])
+def dashboard():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # Get statistics
+        cursor.execute("SELECT COUNT(*) as total FROM product_key_requests")
+        total_requests = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM product_key_requests WHERE status = 'pending'")
+        pending_requests = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM product_key_requests WHERE status = 'approved'")
+        approved_requests = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM product_keys")
+        total_keys = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM product_keys WHERE is_active = TRUE AND end_date > NOW()")
+        active_keys = cursor.fetchone()['total']
+
+        cursor.execute("SELECT COUNT(*) as total FROM product_keys WHERE end_date < NOW()")
+        expired_keys = cursor.fetchone()['total']
+
+        # Get recent requests
+        cursor.execute("""
+            SELECT * FROM product_key_requests 
+            ORDER BY created_at DESC 
+            LIMIT 10
+        """)
+        recent_requests = cursor.fetchall()
+
+        # Get recent product keys
+        cursor.execute("""
+            SELECT * FROM product_keys 
+            ORDER BY created_at DESC 
+            LIMIT 10
+        """)
+        recent_keys = cursor.fetchall()
+
+        # Convert datetime objects to strings for template
+        for req in recent_requests:
+            if req.get('created_at'):
+                req['created_at'] = req['created_at'].isoformat() if isinstance(req['created_at'], datetime) else str(req['created_at'])
+            if req.get('updated_at'):
+                req['updated_at'] = req['updated_at'].isoformat() if isinstance(req['updated_at'], datetime) else str(req['updated_at'])
+
+        for key in recent_keys:
+            if key.get('start_date'):
+                key['start_date'] = key['start_date'].isoformat() if isinstance(key['start_date'], datetime) else str(key['start_date'])
+            if key.get('end_date'):
+                key['end_date'] = key['end_date'].isoformat() if isinstance(key['end_date'], datetime) else str(key['end_date'])
+            if key.get('created_at'):
+                key['created_at'] = key['created_at'].isoformat() if isinstance(key['created_at'], datetime) else str(key['created_at'])
+
+        cursor.close()
+        conn.close()
+
+        stats = {
+            'total_requests': total_requests,
+            'pending_requests': pending_requests,
+            'approved_requests': approved_requests,
+            'total_keys': total_keys,
+            'active_keys': active_keys,
+            'expired_keys': expired_keys
+        }
+
+        return render_template('dashboard.html', 
+                             stats=stats,
+                             recent_requests=recent_requests,
+                             recent_keys=recent_keys,
+                             now=datetime.now())
+
+    except Exception as e:
+        return f"Error loading dashboard: {str(e)}", 500
+
+# -------------------------------------------------------------------
+# REQUESTS PAGE
+# -------------------------------------------------------------------
+@app.route('/requests', methods=['GET'])
+def requests_page():
+    try:
+        status = request.args.get('status', None)
+        conn = get_db()
+        cursor = conn.cursor()
+
+        if status:
+            cursor.execute(
+                """SELECT * FROM product_key_requests WHERE status = %s ORDER BY created_at DESC""",
+                (status,)
+            )
+        else:
+            cursor.execute("""SELECT * FROM product_key_requests ORDER BY created_at DESC""")
+
+        requests = cursor.fetchall()
+
+        # Convert datetime objects to strings
+        for req in requests:
+            if req.get('created_at'):
+                req['created_at'] = req['created_at'].isoformat() if isinstance(req['created_at'], datetime) else str(req['created_at'])
+
+        cursor.close()
+        conn.close()
+
+        return render_template('requests.html', requests=requests)
+
+    except Exception as e:
+        return f"Error loading requests: {str(e)}", 500
+
+# -------------------------------------------------------------------
+# LICENSES PAGE
+# -------------------------------------------------------------------
+@app.route('/licenses', methods=['GET'])
+def licenses_page():
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+
+        cursor.execute("""SELECT * FROM product_keys ORDER BY created_at DESC""")
+        licenses = cursor.fetchall()
+
+        # Convert datetime objects to strings
+        now = datetime.now()
+        for license in licenses:
+            if license.get('start_date'):
+                license['start_date'] = license['start_date'].isoformat() if isinstance(license['start_date'], datetime) else str(license['start_date'])
+            if license.get('end_date'):
+                license['end_date'] = license['end_date'].isoformat() if isinstance(license['end_date'], datetime) else str(license['end_date'])
+            if license.get('created_at'):
+                license['created_at'] = license['created_at'].isoformat() if isinstance(license['created_at'], datetime) else str(license['created_at'])
+
+        cursor.close()
+        conn.close()
+
+        return render_template('licenses.html', licenses=licenses, now=now)
+
+    except Exception as e:
+        return f"Error loading licenses: {str(e)}", 500
 
 # -------------------------------------------------------------------
 # HEALTH
